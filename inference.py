@@ -83,7 +83,7 @@ def run_inference(input_path: str, output_path: str) -> list:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     avg_lat = sum(r['latency_seconds'] for r in results) / len(results)
-    print(f"\n✓ Results saved to '{output_path}'")
+    print(f"\n[+] Results saved to '{output_path}'")
     print(f"  Queries processed : {len(results)}")
     print(f"  Avg latency       : {avg_lat:.3f}s  (target: <5s)")
     print(f"\nNext: python eval_script.py --results {output_path}")
