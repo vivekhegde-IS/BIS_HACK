@@ -1,187 +1,118 @@
 #!/usr/bin/env python3
 """
-Component: Flask Web UI
-Web interface for BIS Standards Finder
+Component: Flask Web UI (PERSON B)
+Web interface for BIS Standards RAG System - connects frontend with backend pipeline
+
+Features:
+- Loads TF-IDF model at startup (NOT per-request) - Rule B-2
+- Uses backend retriever for real search
+- Integrates Anthropic Claude for explanations
+- Beautiful single-page app with gradient UI
+- Real-time search results with latency tracking
 
 Usage:
     python src/app.py
     # Open: http://localhost:5000
+
+CRITICAL REQUIREMENTS:
+- Model must exist at data/tfidf_model.pkl (run: python src/indexer.py first)
+- ANTHROPIC_API_KEY must be set in .env (optional, demo mode if missing)
+- Flask templates in src/templates/
 """
 
 import time
+import sys
+import os
+from pathlib import Path
 from flask import Flask, render_template, request, jsonify
+
+# ─── Add src/ to Python path ────────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).parent / ".."))
+
+# ─── Import backend modules ────────────────────────────────────────────────
+from src.retriever import retrieve, load_model_once
+from src.rationale import generate_rationale
 
 app = Flask(__name__, template_folder="templates")
 
-# ---------------------------------------------------------------------------
-# DEMO DATA — 12 real BIS standards with full descriptions
-# ---------------------------------------------------------------------------
+# ─── Global state ───────────────────────────────────────────────────────────
+MODEL_LOADED = False
+MODEL_ERROR = None
+MODEL_DATA = None
+
+# ─── DEMO DATA (fallback if model not available) ────────────────────────────
 DEMO_BIS_DB = [
     {
         "id": "IS 269: 1989",
         "title": "Ordinary Portland Cement, 33 Grade — Specification",
-        "category": "Cement",
-        "description": (
-            "This standard specifies the chemical composition, physical properties, "
-            "and testing procedures for 33 Grade Ordinary Portland Cement (OPC). "
-            "It covers requirements for fineness, setting time, soundness, and "
-            "compressive strength. Widely used in general construction, plastering, "
-            "and non-structural concrete work."
-        ),
-        "tags": ["cement", "portland", "ordinary", "concrete", "construction", "33 grade"],
+        "description": "This standard specifies chemical composition, physical properties for OPC. Widely used in general construction.",
+        "tags": ["cement", "portland", "ordinary", "concrete"],
     },
     {
         "id": "IS 383: 1970",
         "title": "Coarse and Fine Aggregates from Natural Sources for Concrete",
-        "category": "Aggregates",
-        "description": (
-            "Specifies grading requirements, physical properties, and deleterious "
-            "substance limits for coarse and fine aggregates sourced from natural "
-            "deposits. Applicable to all structural concrete grades. Covers sieve "
-            "analysis, bulk density, moisture content, and soundness tests."
-        ),
-        "tags": ["aggregates", "concrete", "natural", "coarse", "fine", "structural"],
-    },
-    {
-        "id": "IS 458: 2003",
-        "title": "Precast Concrete Pipes (with and without Reinforcement)",
-        "category": "Pipes",
-        "description": (
-            "Governs the manufacture, dimensions, and testing of precast concrete "
-            "pipes used for water mains, sewers, and drainage systems. Covers both "
-            "plain and reinforced variants. Specifies hydraulic pressure tests, "
-            "crushing strength, and jointing requirements."
-        ),
-        "tags": ["pipes", "precast", "concrete", "water", "reinforcement", "sewage"],
-    },
-    {
-        "id": "IS 2185 (Part 2): 1983",
-        "title": "Concrete Masonry Units — Hollow and Solid Lightweight Concrete Blocks",
-        "category": "Masonry",
-        "description": (
-            "Defines dimensional tolerances, minimum compressive strength, and water "
-            "absorption limits for hollow and solid lightweight concrete masonry blocks. "
-            "Used in load-bearing and non-load-bearing walls. Promotes energy-efficient "
-            "construction with reduced dead load."
-        ),
-        "tags": ["masonry", "blocks", "lightweight", "hollow", "solid", "concrete"],
-    },
-    {
-        "id": "IS 459: 1992",
-        "title": "Corrugated and Semi-Corrugated Asbestos Cement Sheets",
-        "category": "Roofing",
-        "description": (
-            "Covers the manufacture, dimensions, and performance requirements for "
-            "corrugated and semi-corrugated asbestos cement roofing and cladding sheets. "
-            "Specifies transverse load, impermeability, and moisture movement tests "
-            "applicable to industrial and agricultural building roofs."
-        ),
-        "tags": ["roofing", "asbestos", "cement", "sheets", "corrugated", "cladding"],
+        "description": "Specifies grading requirements and physical properties for aggregates used in concrete.",
+        "tags": ["aggregates", "concrete", "natural", "coarse", "fine"],
     },
     {
         "id": "IS 455: 1989",
         "title": "Portland Slag Cement — Specification",
-        "category": "Cement",
-        "description": (
-            "Specifies requirements for Portland slag cement produced by intergrinding "
-            "Portland cement clinker and granulated blast furnace slag. Offers improved "
-            "resistance to sulphate attack and reduced heat of hydration, making it "
-            "suitable for mass concrete, marine structures, and foundations."
-        ),
-        "tags": ["cement", "slag", "portland", "construction", "marine", "sulphate"],
+        "description": "Specifies Portland slag cement with improved resistance to sulphate attack.",
+        "tags": ["cement", "slag", "portland", "construction", "marine"],
     },
     {
-        "id": "IS 1489 (Part 2): 1991",
-        "title": "Portland Pozzolana Cement — Calcined Clay Based",
-        "category": "Cement",
-        "description": (
-            "Covers calcined clay-based Portland pozzolana cement, specifying its "
-            "composition, physical properties, and chemical requirements. Offers "
-            "lower heat of hydration and enhanced workability. Commonly used in "
-            "hydraulic structures, large foundations, and tropical climates."
-        ),
-        "tags": ["cement", "pozzolana", "calcined", "clay", "portland", "hydraulic"],
+        "id": "IS 456: 2000",
+        "title": "Plain and Reinforced Concrete — Code of Practice",
+        "description": "Code of practice for plain and reinforced concrete for general building construction.",
+        "tags": ["concrete", "reinforced", "code", "practice"],
     },
     {
-        "id": "IS 3466: 1988",
-        "title": "Masonry Cement — Specification",
-        "category": "Cement",
-        "description": (
-            "Defines requirements for masonry cement used in mortar for brickwork, "
-            "blockwork, and plastering. Not intended for structural concrete. "
-            "Provides superior workability and water retention compared to OPC, "
-            "improving adhesion and reducing shrinkage cracks in masonry joints."
-        ),
-        "tags": ["cement", "masonry", "mortar", "general", "brickwork", "plaster"],
-    },
-    {
-        "id": "IS 6909: 1990",
-        "title": "Supersulphated Cement — Specification",
-        "category": "Cement",
-        "description": (
-            "Specifies composition and testing of supersulphated cement, manufactured "
-            "from granulated blast furnace slag, calcium sulphate, and Portland cement "
-            "clinker. Exhibits high resistance to sulphate attack and aggressive water "
-            "conditions — ideal for marine works, sewage, and chemical plant foundations."
-        ),
-        "tags": ["cement", "supersulphated", "marine", "aggressive", "water", "slag"],
-    },
-    {
-        "id": "IS 8042: 1989",
-        "title": "White Portland Cement — Specification",
-        "category": "Cement",
-        "description": (
-            "Covers physical and chemical requirements for white Portland cement "
-            "produced from raw materials low in iron and manganese oxides. Used "
-            "primarily in architectural, decorative, and terrazzo work where colour "
-            "consistency is essential. Meets the same strength class as OPC."
-        ),
-        "tags": ["cement", "white", "portland", "architectural", "decorative", "terrazzo"],
-    },
-    {
-        "id": "IS 8112: 1989",
-        "title": "Ordinary Portland Cement, 43 Grade — Specification",
-        "category": "Cement",
-        "description": (
-            "Specifies the 43 Grade OPC, widely used in high-performance reinforced "
-            "concrete structures, pre-cast elements, and precast prestressed concrete. "
-            "Achieves minimum 43 MPa at 28 days. Balances strength and workability "
-            "for most structural concrete applications."
-        ),
-        "tags": ["cement", "portland", "43 grade", "high strength", "concrete", "precast"],
-    },
-    {
-        "id": "IS 12269: 1987",
-        "title": "Ordinary Portland Cement, 53 Grade — Specification",
-        "category": "Cement",
-        "description": (
-            "Defines the highest OPC grade (53 MPa at 28 days) for demanding structural "
-            "applications including high-rise buildings, bridges, flyovers, and "
-            "prestressed concrete. Requires stricter quality control. Generates higher "
-            "heat of hydration — needs careful curing in mass concrete applications."
-        ),
-        "tags": ["cement", "portland", "53 grade", "prestressed", "high-rise", "bridge"],
+        "id": "IS 1489 (Part 1): 1991",
+        "title": "Portland Pozzolana Cement — Specification",
+        "description": "Covers Portland pozzolana cement specifications with lower heat of hydration.",
+        "tags": ["cement", "pozzolana", "portland"],
     },
 ]
 
 
-def demo_search(query: str, top_k: int = 5) -> list[dict]:
+def init_model():
     """
-    Demo keyword-based search over DEMO_BIS_DB.
+    Load TF-IDF model at app startup (NOT per-request).
+    Implements Rule B-2: Load model outside request handlers.
+    """
+    global MODEL_LOADED, MODEL_ERROR, MODEL_DATA
+    try:
+        print("[*] Initializing BIS Standards RAG System...")
+        MODEL_DATA = load_model_once()
+        MODEL_LOADED = True
+        print("[✓] TF-IDF model loaded successfully")
+        print(f"    Standards: {len(MODEL_DATA['chunks'])}")
+        print(f"    Vocabulary: {len(MODEL_DATA['vectorizer'].vocabulary_)}")
+        return True
+    except FileNotFoundError as e:
+        MODEL_ERROR = f"Model not found: {str(e)}"
+        print(f"[✗] {MODEL_ERROR}")
+        print("    Hint: Run these commands first:")
+        print("      python src/ingest.py")
+        print("      python src/indexer.py")
+        return False
+    except Exception as e:
+        MODEL_ERROR = f"Model load error: {str(e)}"
+        print(f"[✗] {MODEL_ERROR}")
+        return False
 
-    ── REPLACE THIS FUNCTION ────────────────────────────────────────────────
-    Swap the body below with a call to the real RAG retriever, e.g.:
-        from retriever import retrieve
-        return retrieve(query, top_k=top_k)
-    ─────────────────────────────────────────────────────────────────────────
+
+def demo_search(query: str, top_k: int = 5):
+    """
+    Demo keyword-based search over DEMO_BIS_DB (fallback only).
     """
     query_tokens = set(query.lower().split())
     scored = []
     for entry in DEMO_BIS_DB:
         searchable = " ".join([
-            entry["title"].lower(),
-            entry["description"].lower(),
-            " ".join(entry["tags"]),
+            entry.get("title", "").lower(),
+            entry.get("description", "").lower(),
+            " ".join(entry.get("tags", [])),
         ])
         score = sum(1 for token in query_tokens if token in searchable)
         if score > 0:
@@ -191,9 +122,54 @@ def demo_search(query: str, top_k: int = 5) -> list[dict]:
     return [entry for _, entry in scored[:top_k]]
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
+def real_search(query: str, top_k: int = 5):
+    """
+    Real search using TF-IDF backend + query expansion.
+    Returns list of standard dicts with id, title, description, rationale.
+    """
+    if not MODEL_LOADED or MODEL_DATA is None:
+        return None
+
+    try:
+        # ─── Retrieve top-k standards using TF-IDF ──────────────────────────
+        retrieved_ids = retrieve(query, top_k=top_k)
+        
+        # ─── Build result dicts ──────────────────────────────────────────────
+        chunks = MODEL_DATA['chunks']
+        results = []
+        
+        for std_id in retrieved_ids:
+            # Find the chunk data
+            chunk_data = None
+            for chunk in chunks:
+                if chunk.get('standard') == std_id:
+                    chunk_data = chunk
+                    break
+            
+            if chunk_data:
+                result = {
+                    "id": std_id,
+                    "title": chunk_data.get('title', std_id),
+                    "description": chunk_data.get('description', ''),
+                    "rationale": "",
+                }
+                
+                # ─── Generate rationale using Claude (if API key configured) ──
+                try:
+                    rationale = generate_rationale([chunk_data], query)
+                    result["rationale"] = rationale
+                except Exception as e:
+                    result["rationale"] = f"Standard retrieved for: {query}"
+                
+                results.append(result)
+        
+        return results if results else None
+    except Exception as e:
+        print(f"[✗] Search error: {str(e)}")
+        return None
+
+
+# ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -207,7 +183,9 @@ def api_search():
     API endpoint for BIS standard search.
 
     Request JSON:  { "query": "your search text" }
-    Response JSON: { "results": [...], "query": "...", "count": N, "response_time": X.XXX }
+    Response JSON: { "results": [...], "query": "...", "count": N, "latency": X.XXX }
+    
+    Uses real backend if model loaded, falls back to demo if not available.
     """
     data = request.get_json(silent=True) or {}
     query = data.get("query", "").strip()
@@ -217,22 +195,66 @@ def api_search():
 
     t_start = time.perf_counter()
 
-    # ── REAL SEARCH HOOK ──────────────────────────────────────────────────
-    # When the actual retriever is ready, replace demo_search() with:
-    #   from retriever import retrieve
-    #   results = retrieve(query, top_k=5)
-    # ─────────────────────────────────────────────────────────────────────
-    results = demo_search(query, top_k=5)
+    # ─── Try real search first, fallback to demo ────────────────────────────
+    if MODEL_LOADED and MODEL_DATA:
+        results = real_search(query, top_k=5)
+    else:
+        results = None
+    
+    # ─── Fallback to demo search ─────────────────────────────────────────────
+    if results is None:
+        results = demo_search(query, top_k=5)
+        fallback = True
+    else:
+        fallback = False
 
-    elapsed = round(time.perf_counter() - t_start, 3)
+    latency = round(time.perf_counter() - t_start, 4)
 
     return jsonify({
         "query": query,
         "count": len(results),
         "results": results,
-        "response_time": elapsed,
+        "latency": latency,
+        "backend": "demo" if fallback else "real",
+        "model_status": "loaded" if MODEL_LOADED else ("error: " + MODEL_ERROR if MODEL_ERROR else "initializing"),
     })
 
 
+@app.route("/api/status", methods=["GET"])
+def api_status():
+    """Return system status for debugging."""
+    status = {
+        "model_loaded": MODEL_LOADED,
+        "model_error": MODEL_ERROR,
+    }
+    if MODEL_DATA:
+        status["chunks_count"] = len(MODEL_DATA['chunks'])
+        status["vocab_size"] = len(MODEL_DATA['vectorizer'].vocabulary_)
+    return jsonify(status)
+
+
+# ─── Error handlers ──────────────────────────────────────────────────────────
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Endpoint not found"}), 404
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    print("\n" + "="*70)
+    print("🔍 BIS Standards RAG System - Web Interface")
+    print("="*70)
+    
+    # ─── Load model at startup (Rule B-2) ────────────────────────────────
+    init_model()
+    
+    print("\n[*] Starting Flask server...")
+    print("    URL: http://localhost:5000")
+    print("    Press Ctrl+C to stop\n")
+    
+    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
