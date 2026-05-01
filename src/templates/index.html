@@ -398,7 +398,7 @@
         return;
       }
 
-      renderResults(data.results, data.count, data.response_time, query);
+      renderResults(data.results, data.count, data.latency, query);
 
     } catch (err) {
       btn.disabled = false;
@@ -432,8 +432,8 @@
         <div class="result-body">
           <div class="result-id">${esc(r.id)}</div>
           <div class="result-title">${esc(r.title)}</div>
-          <div class="result-explanation">${esc(r.description)}</div>
-          <span class="result-category">${esc(r.category)}</span>
+          <div class="result-explanation">${esc(r.description || r.rationale || '')}</div>
+          ${r.category ? `<span class="result-category">${esc(r.category)}</span>` : ''}
         </div>
       </div>
     `).join('');
