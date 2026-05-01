@@ -39,9 +39,10 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Models and data (keep chunks.json only, not pkl)
+# Models and data
 *.pkl
 *.pickle
+!tfidf_model.pkl
 data/
 !data/.gitkeep
 
