@@ -85,20 +85,20 @@ def init_model():
         print("[*] Initializing BIS Standards RAG System...")
         MODEL_DATA = load_model_once()
         MODEL_LOADED = True
-        print("[✓] TF-IDF model loaded successfully")
+        print("[+] TF-IDF model loaded successfully")
         print(f"    Standards: {len(MODEL_DATA['chunks'])}")
         print(f"    Vocabulary: {len(MODEL_DATA['vectorizer'].vocabulary_)}")
         return True
     except FileNotFoundError as e:
         MODEL_ERROR = f"Model not found: {str(e)}"
-        print(f"[✗] {MODEL_ERROR}")
+        print(f"[-] {MODEL_ERROR}")
         print("    Hint: Run these commands first:")
         print("      python src/ingest.py")
         print("      python src/indexer.py")
         return False
     except Exception as e:
         MODEL_ERROR = f"Model load error: {str(e)}"
-        print(f"[✗] {MODEL_ERROR}")
+        print(f"[-] {MODEL_ERROR}")
         return False
 
 
@@ -138,34 +138,33 @@ def real_search(query: str, top_k: int = 5):
         chunks = MODEL_DATA['chunks']
         results = []
         
+        # ─── Collect chunks for all retrieved standards ─────────────────────
+        chunks = MODEL_DATA['chunks']
+        selected_chunks = []
         for std_id in retrieved_ids:
-            # Find the chunk data
-            chunk_data = None
             for chunk in chunks:
                 if chunk.get('standard') == std_id:
-                    chunk_data = chunk
+                    selected_chunks.append(chunk)
                     break
-            
-            if chunk_data:
-                result = {
-                    "id": std_id,
-                    "title": chunk_data.get('title', std_id),
-                    "description": chunk_data.get('description', ''),
-                    "rationale": "",
-                }
-                
-                # ─── Generate rationale using Claude (if API key configured) ──
-                try:
-                    rationale = generate_rationale([chunk_data], query)
-                    result["rationale"] = rationale
-                except Exception as e:
-                    result["rationale"] = f"Standard retrieved for: {query}"
-                
-                results.append(result)
+        
+        # ─── Batch generate rationales (single API call) ────────────────────
+        rationales = generate_rationale(selected_chunks, query)
+        
+        # ─── Build final result list ────────────────────────────────────────
+        results = []
+        for i, chunk in enumerate(selected_chunks):
+            # Fallback if AI didn't return enough rationales
+            rat_text = rationales[i] if i < len(rationales) else f"Standard retrieved for: {query}"
+            results.append({
+                "id": chunk.get('standard'),
+                "title": chunk.get('title', chunk.get('standard')),
+                "description": chunk.get('description', ''),
+                "rationale": rat_text,
+            })
         
         return results if results else None
     except Exception as e:
-        print(f"[✗] Search error: {str(e)}")
+        print(f"[-] Search error: {str(e)}")
         return None
 
 
@@ -247,7 +246,7 @@ def server_error(e):
 
 if __name__ == "__main__":
     print("\n" + "="*70)
-    print("🔍 BIS Standards RAG System - Web Interface")
+    print("[*] BIS Standards RAG System - Web Interface")
     print("="*70)
     
     # ─── Load model at startup (Rule B-2) ────────────────────────────────
