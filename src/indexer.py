@@ -34,12 +34,11 @@ def build_tfidf_index(chunks):
     corpus = [chunk['text'] for chunk in chunks]
 
     vectorizer = TfidfVectorizer(
-        ngram_range=(1, 2),       # unigrams + bigrams for better phrase matching
-        sublinear_tf=True,        # log(1+tf) to reduce dominance of frequent terms
-        max_features=100000,      # large vocab for domain coverage
-        min_df=1,                 # keep rare IS-specific terms
-        analyzer='word',
-        token_pattern=r'(?u)\b[A-Za-z0-9][A-Za-z0-9\-\.]+\b',
+        analyzer='char_wb',       # Character-level n-grams handle typos perfectly
+        ngram_range=(3, 5),       # Match sequences of 3-5 characters
+        sublinear_tf=True,
+        max_features=100000,
+        min_df=1,
     )
 
     tfidf_matrix = vectorizer.fit_transform(corpus)
