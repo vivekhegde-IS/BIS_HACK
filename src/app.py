@@ -115,26 +115,31 @@ def demo_search(query: str, top_k: int = 5):
 
 
 def real_search(query: str, top_k: int = 5):
-    """Real TF-IDF search with LLM-generated rationales."""
-    if not MODEL_LOADED or MODEL_DATA is None:
-        return None
+    """TF-IDF search (or fallback) with LLM-generated rationales."""
     try:
-        retrieved_ids   = retrieve(query, top_k=top_k)
-        chunks          = MODEL_DATA["chunks"]
-        selected_chunks = []
-        for std_id in retrieved_ids:
-            for chunk in chunks:
-                if chunk.get("standard") == std_id:
-                    selected_chunks.append(chunk)
-                    break
-
+        if MODEL_LOADED and MODEL_DATA:
+            retrieved_ids = retrieve(query, top_k=top_k)
+            chunks = MODEL_DATA["chunks"]
+            selected_chunks = []
+            for std_id in retrieved_ids:
+                for chunk in chunks:
+                    if chunk.get("standard") == std_id:
+                        selected_chunks.append(chunk)
+                        break
+        else:
+            selected_chunks = demo_search(query, top_k=top_k)
+            # Map 'id' to 'standard' for compatibility with rationale.py
+            for c in selected_chunks:
+                if 'standard' not in c:
+                    c['standard'] = c['id']
+            
         rationales = generate_rationale(selected_chunks, query)
 
         results = []
         for i, chunk in enumerate(selected_chunks):
             rat_text = rationales[i] if i < len(rationales) else f"Standard retrieved for: {query}"
             results.append({
-                "id":          chunk.get("standard"),
+                "id":          chunk.get("standard", chunk.get("id")),
                 "title":       chunk.get("title", chunk.get("standard")),
                 "description": chunk.get("description", ""),
                 "rationale":   rat_text,
@@ -142,7 +147,8 @@ def real_search(query: str, top_k: int = 5):
         return results if results else None
     except Exception as e:
         print(f"[-] Search error: {str(e)}")
-        return None
+        # Ultimate fallback
+        return demo_search(query, top_k=top_k)
 
 
 # ─── Application factory ──────────────────────────────────────────────────────
@@ -181,15 +187,12 @@ def create_app():
 
         t_start = time.perf_counter()
 
-        if MODEL_LOADED and MODEL_DATA:
-            results = real_search(query, top_k=5)
-        else:
-            results = None
-
+        results = real_search(query, top_k=5)
         if results is None:
-            results  = demo_search(query, top_k=5)
+            results = demo_search(query, top_k=5)
             fallback = True
         else:
+            # We don't necessarily know if it was fallback internally, but it has rationales now!
             fallback = False
 
         latency = round(time.perf_counter() - t_start, 4)

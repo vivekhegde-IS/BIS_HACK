@@ -44,7 +44,7 @@ A user asked: "{query}"
 Here are the top retrieved standards:
 {context}
 
-For EACH of the {len(standards)} standards above, provide a very concise, 1-sentence rationale explaining why it is relevant.
+For EACH of the {len(standards)} standards above, provide a detailed summary (at least 3 lines) explaining why it is relevant.
 IMPORTANT: Separate each of the {len(standards)} rationales with a triple hashtag '###'.
 Example: Rationale 1 ### Rationale 2 ### Rationale 3...
 """
