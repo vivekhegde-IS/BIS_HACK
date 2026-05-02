@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIS Finder — Bureau of Indian Standards Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    ...existing code from <style>...</style>...
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Main Card -->
+  <div class="card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="site-title">BIS Finder</div>
+      <div class="page-title">BIS Standards Search</div>
+      <div class="page-subtitle">Search and discover Bureau of Indian Standards — IS codes, specifications, and technical documents</div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-section">
+      <div class="search-row">
+        <input
+          id="query-input"
+          class="search-input"
+          type="text"
+          placeholder="e.g. cement for structural concrete, precast pipes, roofing sheets..."
+          autocomplete="off"
+          aria-label="Search BIS Standards"
+        />
+        <button class="search-btn" id="search-btn" onclick="doSearch()">Search</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="results-section">
+      <!-- injected by JS -->
+    </div>
+
+  </div><!-- /.card -->
+
+  <div class="divider"></div>
+
+  <div class="footer">
+    <div class="footer-brand">BIS Finder</div>
+    <div class="footer-sub">Bureau of Indian Standards</div>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+  const input   = document.getElementById('query-input');
+  const section = document.getElementById('results-section');
+  const btn     = document.getElementById('search-btn');
+
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+
+  async function doSearch() {
+    const query = input.value.trim();
+    if (!query) return;
+
+    btn.disabled = true;
+    showLoading();
+
+    try {
+      // TODO: Replace the URL below with your actual Render backend URL after deployment
+      const backendUrl = 'https://YOUR-RENDER-BACKEND-URL.onrender.com/api/search';
+      const res  = await fetch(backendUrl, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ query }),
+      });
+      const data = await res.json();
+
+      btn.disabled = false;
+
+      if (data.error) { showStatus('⚠️', data.error); return; }
+      if (!data.results || data.results.length === 0) {
+        showStatus('🔍', 'No matching BIS standards found.<br>Try different or broader keywords.');
+        return;
+      }
+
+      renderResults(data.results, data.count, data.latency, query);
+
+    } catch (err) {
+      btn.disabled = false;
+      showStatus('❌', 'Something went wrong. Is the server running?');
+      console.error(err);
+    }
+  }
+
+  function showLoading() {
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="loading-row">
+        <div class="spinner-ring"></div>
+        Searching BIS standards…
+      </div>`;
+  }
+
+  function showStatus(emoji, msg) {
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="status-message">
+        <span class="emoji">${emoji}</span>
+        ${msg}
+      </div>`;
+  }
+
+  function renderResults(results, count, responseTime, query) {
+    const items = results.map((r, i) => `
+      <div class="result-item" style="animation-delay:${i * 0.07}s">
+        <div class="result-number">${i + 1}</div>
+        <div class="result-body">
+          <div class="result-id">${esc(r.id)}</div>
+          <div class="result-title">${esc(r.title)}</div>
+          <div class="result-explanation">${esc(r.description || r.rationale || '')}</div>
+          ${r.category ? `<span class="result-category">${esc(r.category)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="results-meta">
+        <div class="results-count">
+          Showing <strong>${count}</strong> result${count !== 1 ? 's' : ''} for
+          "<strong>${esc(query)}</strong>"
+        </div>
+      </div>
+      ${items}
+      <div class="response-time-row">
+        <span class="rt-icon">⏱️</span>
+        Response time: <span class="rt-val">${responseTime.toFixed(3)}s</span>
+      </div>
+    `;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

@@ -248,12 +248,10 @@ if __name__ == "__main__":
     print("\n" + "="*70)
     print("[*] BIS Standards RAG System - Web Interface")
     print("="*70)
-    
     # ─── Load model at startup (Rule B-2) ────────────────────────────────
     init_model()
-    
     print("\n[*] Starting Flask server...")
-    print("    URL: http://localhost:5000")
+    port = int(os.environ.get("PORT", 5000))
+    print(f"    URL: http://localhost:{port}")
     print("    Press Ctrl+C to stop\n")
-    
-    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
+    app.run(debug=True, host="0.0.0.0", port=port, use_reloader=False)
