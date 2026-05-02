@@ -153,9 +153,8 @@ def create_app():
     """
     app = Flask(__name__, template_folder="templates")
 
-    # ── CORS: allow your Vercel frontend (and localhost for dev) ──────────────
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    CORS(app, resources={r"/api/*": {"origins": [frontend_url, "http://localhost:5000"]}})
+    # ── CORS: allow all origins since this is a public search API ──────────────
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # ── Load model at factory time (once per worker process) ─────────────────
     init_model()
