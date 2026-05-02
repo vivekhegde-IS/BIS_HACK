@@ -1,0 +1,722 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary);line-height:1.65;}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.nb{padding:7px 16px;border:0.5px solid var(--color-border-secondary);border-radius:20px;background:transparent;cursor:pointer;font-size:12px;color:var(--color-text-secondary);}
+.nb.on{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary);}
+.pg{display:none;} .pg.on{display:block;}
+h2{font-size:17px;font-weight:500;margin-bottom:1rem;}
+h3{font-size:13px;font-weight:500;margin:1.2rem 0 0.4rem;}
+p,li{color:var(--color-text-secondary);font-size:13px;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.2rem;margin-bottom:1rem;}
+pre{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:11.5px;font-family:var(--font-mono);overflow-x:auto;margin:0.5rem 0 0.8rem;color:var(--color-text-primary);white-space:pre;line-height:1.6;}
+.red{border-left:3px solid #E24B4A;background:#FCEBEB;padding:8px 12px;border-radius:0 6px 6px 0;margin:5px 0;font-size:12px;color:#791F1F;}
+.grn{border-left:3px solid #1D9E75;background:#EAF3DE;padding:8px 12px;border-radius:0 6px 6px 0;margin:5px 0;font-size:12px;color:#085041;}
+.amb{border-left:3px solid #EF9F27;background:#FAEEDA;padding:8px 12px;border-radius:0 6px 6px 0;margin:5px 0;font-size:12px;color:#633806;}
+.blu{border-left:3px solid #185FA5;background:#E6F1FB;padding:8px 12px;border-radius:0 6px 6px 0;margin:5px 0;font-size:12px;color:#0C447C;}
+.row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.row:last-child{border-bottom:none;}
+.ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0;margin-top:1px;}
+.ic-a{background:#E6F1FB;color:#0C447C;}
+.ic-b{background:#EAF3DE;color:#27500A;}
+.ic-x{background:#FCEBEB;color:#A32D2D;}
+.ic-ok{background:#EAF3DE;color:#3B6D11;}
+.ic-w{background:#FAEEDA;color:#854F0B;}
+.rt{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+.rs{font-size:12px;color:var(--color-text-secondary);margin-top:2px;}
+.tree{font-family:var(--font-mono);font-size:12px;line-height:2;color:var(--color-text-secondary);}
+.fa{color:#185FA5;font-weight:500;}
+.fb{color:#3B6D11;font-weight:500;}
+.fx{color:#A32D2D;font-weight:500;}
+.fc{color:#534AB7;font-weight:500;}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;display:inline-block;margin-left:4px;}
+.ta{background:#E6F1FB;color:#0C447C;}
+.tb{background:#EAF3DE;color:#27500A;}
+.tx{background:#FCEBEB;color:#A32D2D;}
+.tc{background:#EEEDFE;color:#3C3489;}
+.sn{width:22px;height:22px;border-radius:50%;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;}
+.step{display:flex;gap:10px;align-items:flex-start;margin:8px 0;}
+.sc{flex:1;font-size:13px;color:var(--color-text-secondary);}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:0.5rem 0;}
+th{text-align:left;padding:6px 8px;background:var(--color-background-secondary);font-weight:500;color:var(--color-text-secondary);}
+td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top;color:var(--color-text-secondary);}
+.pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;}
+.p-red{background:#FCEBEB;color:#791F1F;}
+.p-grn{background:#EAF3DE;color:#27500A;}
+.p-amb{background:#FAEEDA;color:#633806;}
+.num{font-size:22px;font-weight:500;margin-bottom:2px;}
+.mlabel{font-size:11px;color:var(--color-text-secondary);}
+.mcard{background:var(--color-background-secondary);border-radius:8px;padding:12px;text-align:center;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0.75rem 0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:480px){.grid3{grid-template-columns:1fr 1fr;} .grid2{grid-template-columns:1fr;}}
+</style>
+
+<div style="padding:1rem 0;">
+<h2 style="sr-only">BIS Hackathon — Complete GitHub and rules reference</h2>
+
+<div class="nav">
+  <button class="nb on" onclick="go('files',this)">All GitHub files</button>
+  <button class="nb" onclick="go('content',this)">What's inside each file</button>
+  <button class="nb" onclick="go('airulesA',this)">Person A — AI + git rules</button>
+  <button class="nb" onclick="go('airulesB',this)">Person B — AI + git rules</button>
+  <button class="nb" onclick="go('gitflow',this)">Safe git workflow</button>
+  <button class="nb" onclick="go('verify',this)">Final verification</button>
+</div>
+
+<!-- FILES PAGE -->
+<div id="pg-files" class="pg on">
+<h2>Every file that must exist in the GitHub repo</h2>
+<div class="card">
+<div class="tree">
+bis-standards-rag/  <span style="color:var(--color-text-secondary);font-size:11px;">(root of repo)</span>
+│
+├── <span class="fx">inference.py</span>           <span class="tag tx">CRITICAL — judges run this</span>
+├── <span class="fx">eval_script.py</span>         <span class="tag tx">CRITICAL — copy provided file exactly</span>
+├── <span class="fc">requirements.txt</span>       <span class="tag tc">both contribute</span>
+├── <span class="fb">README.md</span>              <span class="tag tb">Person B writes</span>
+├── <span class="fb">presentation.pdf</span>       <span class="tag tb">Person B creates</span>
+├── <span class="fb">.env.example</span>           <span class="tag tb">Person B creates — NO real keys</span>
+├── <span class="fb">.gitignore</span>             <span class="tag tb">Person B creates first</span>
+│
+├── src/                       <span style="color:var(--color-text-secondary);font-size:11px;">mandatory folder</span>
+│   ├── <span class="fa">ingest.py</span>          <span class="tag ta">Person A writes</span>
+│   ├── <span class="fa">indexer.py</span>         <span class="tag ta">Person A writes</span>
+│   ├── <span class="fa">retriever.py</span>       <span class="tag ta">Person A writes</span>
+│   ├── <span class="fb">rationale.py</span>       <span class="tag tb">Person B writes</span>
+│   └── <span class="fb">app.py</span>             <span class="tag tb">Person B writes</span>
+│
+└── data/                      <span style="color:var(--color-text-secondary);font-size:11px;">mandatory folder</span>
+    ├── <span class="fa">chunks.json</span>        <span class="tag ta">Person A produces — 600+ entries</span>
+    ├── <span class="fa">tfidf_model.pkl</span>    <span class="tag ta">Person A produces — COMMIT this</span>
+    ├── <span class="fc">public_test_set.json</span>   <span class="tag tc">provided by organizers</span>
+    └── <span class="fa">public_results.json</span>    <span class="tag ta">Person A produces from inference run</span>
+</div>
+</div>
+
+<div class="card">
+<h3>Files that must NEVER be in the repo</h3>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">.env</div><div class="rs">Has real API key. Repo is public. Anyone can steal it the moment it is pushed.</div></div></div>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">__pycache__/ and *.pyc</div><div class="rs">Python auto-generates these. They change every run. They clutter git history.</div></div></div>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">.venv/ folder</div><div class="rs">Your local Python environment. Hundreds of files. Judges create their own from requirements.txt.</div></div></div>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">BIS_SP_21.pdf (original PDF)</div><div class="rs">Very large file, may have licensing issues. judges do not need it.</div></div></div>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">BIS_SP_21.txt (converted text)</div><div class="rs">Intermediate file, very large. Only chunks.json (the processed output) is needed.</div></div></div>
+<div class="row"><div class="ic ic-x">X</div><div><div class="rt">Any file named secret, key, token, password</div><div class="rs">GitHub scans for these patterns. Always use .env for sensitive values.</div></div></div>
+</div>
+
+<div class="grid3">
+<div class="mcard"><div class="num" style="color:#185FA5;">14</div><div class="mlabel">files to commit</div></div>
+<div class="mcard"><div class="num" style="color:#A32D2D;">6</div><div class="mlabel">files/folders to never commit</div></div>
+<div class="mcard"><div class="num" style="color:#3B6D11;">2</div><div class="mlabel">mandatory folders (src/, data/)</div></div>
+</div>
+</div>
+
+<!-- CONTENT PAGE -->
+<div id="pg-content" class="pg">
+<h2>What goes inside every file — in full detail</h2>
+
+<div class="card">
+<h3>inference.py — root level — Person A writes</h3>
+<p>This is the entry point judges run. It must accept --input and --output flags. It loads the saved index, processes every query, and writes results to a JSON file.</p>
+<pre>import argparse, json, time, sys
+sys.path.insert(0, "src")
+from retriever import load_index, retrieve
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input",  required=True)
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
+
+    index = load_index("data/tfidf_model.pkl")  # load ONCE, not inside loop
+
+    with open(args.input) as f:
+        queries = json.load(f)
+
+    results = []
+    for item in queries:
+        t0 = time.time()
+        ids = retrieve(item["query"], index, top_k=5)
+        elapsed = time.time() - t0
+
+        while len(ids) < 5:          # always pad to exactly 5
+            ids.append(ids[-1])
+
+        results.append({
+            "id":                  item["id"],
+            "retrieved_standards": ids[:5],
+            "latency_seconds":     round(elapsed, 4)
+        })
+
+    with open(args.output, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Done: {len(results)} queries processed")
+
+if __name__ == "__main__":
+    main()</pre>
+<div class="red">Output keys must be exactly: id, retrieved_standards, latency_seconds — not "standards", not "results", not anything else. Wrong keys = eval script crashes = 0/40 pts.</div>
+</div>
+
+<div class="card">
+<h3>eval_script.py — root level — COPY AS-IS</h3>
+<p>Do not write this file. It is provided by the organizers. Copy it byte-for-byte into the repo root. Do not rename it. Do not edit it. The judges run it exactly as provided.</p>
+<div class="amb">If the AI assistant tries to regenerate or rewrite eval_script.py, reject it. Only the original provided file is valid.</div>
+</div>
+
+<div class="card">
+<h3>requirements.txt — both persons contribute</h3>
+<pre>scikit-learn==1.2.2
+numpy==1.24.3
+Flask==2.2.5
+python-dotenv==1.0.0
+anthropic==0.25.0</pre>
+<div class="red">Every package needs == with an exact version. No ~= or >=. If a new package is installed during AI-assisted coding, it must be added here immediately.</div>
+</div>
+
+<div class="card">
+<h3>.gitignore — Person B creates this FIRST, before any other push</h3>
+<pre>.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.DS_Store
+*.log
+BIS_SP_21.txt
+BIS_SP_21.pdf</pre>
+<div class="red">This file must be the very first thing committed. If .env is pushed even once, the key is compromised — even if you delete it later, git history preserves it.</div>
+</div>
+
+<div class="card">
+<h3>.env.example — Person B creates — this IS committed</h3>
+<pre>ANTHROPIC_API_KEY=your_anthropic_key_here</pre>
+<p>This shows judges what environment variables are needed without exposing real values. The actual .env file with the real key sits on each person's local machine only and is never pushed.</p>
+</div>
+
+<div class="card">
+<h3>src/ingest.py — Person A writes</h3>
+<p>Reads BIS_SP_21.txt (converted from PDF using pdftotext) and produces data/chunks.json. Each chunk is one IS standard entry.</p>
+<pre>import re, json
+
+def parse_standards(txt_path):
+    with open(txt_path, 'r', encoding='utf-8', errors='ignore') as f:
+        text = f.read()
+    pattern = r'(IS\s+\d+[\w\s:.-]*?:\s*\d{4})'
+    parts = re.split(pattern, text)
+    chunks = []
+    i = 1
+    while i < len(parts) - 1:
+        is_id = parts[i].strip()
+        body  = parts[i+1].strip()[:1500]
+        title_match = re.match(r'([A-Z][A-Z\s/,-]{5,80})', body)
+        title = title_match.group(1).strip() if title_match else is_id
+        chunks.append({
+            "id":    is_id,
+            "title": title,
+            "text":  f"{is_id} {title} {body}"
+        })
+        i += 2
+    return chunks
+
+if __name__ == "__main__":
+    chunks = parse_standards("BIS_SP_21.txt")
+    with open("data/chunks.json", "w") as f:
+        json.dump(chunks, f, indent=2)
+    print(f"Extracted {len(chunks)} chunks")</pre>
+</div>
+
+<div class="card">
+<h3>src/indexer.py — Person A writes</h3>
+<p>Reads chunks.json, builds a TF-IDF model using scikit-learn, and saves the model plus the chunk list to data/tfidf_model.pkl so inference.py can load it instantly.</p>
+<pre>import json, pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+def build_index(chunks_path="data/chunks.json",
+                out_path="data/tfidf_model.pkl"):
+    with open(chunks_path) as f:
+        chunks = json.load(f)
+    texts = [c["text"] for c in chunks]
+    vec = TfidfVectorizer(ngram_range=(1,2), min_df=1, sublinear_tf=True)
+    mat = vec.fit_transform(texts)
+    with open(out_path, "wb") as f:
+        pickle.dump({"vectorizer": vec, "matrix": mat, "chunks": chunks}, f)
+    print(f"Index: {mat.shape[0]} docs, {mat.shape[1]} terms")
+
+if __name__ == "__main__":
+    build_index()</pre>
+</div>
+
+<div class="card">
+<h3>src/retriever.py — Person A writes</h3>
+<p>Loads the saved index, expands the query with synonyms, runs cosine similarity, and returns the top-5 IS standard IDs.</p>
+<pre>import pickle, numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+SYNONYMS = {
+    "slag":      "portland slag",
+    "pozzolana": "fly ash calcined clay",
+    "aggregate": "coarse fine gravel",
+    "lime":      "building lime quicklime",
+    "cement":    "portland ordinary",
+    "plywood":   "wood panel board",
+    "brick":     "masonry fired clay",
+    "pipe":      "tube conduit drainage",
+    "steel":     "iron structural metal bar",
+    "tile":      "ceramic floor wall",
+    "paint":     "coating surface primer",
+    "wire":      "conductor cable electrical",
+}
+
+def expand_query(q):
+    q = q.lower()
+    for k, v in SYNONYMS.items():
+        if k in q:
+            q = q + " " + v
+    return q
+
+def load_index(path="data/tfidf_model.pkl"):
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+def retrieve(query, index, top_k=5):
+    vec = index["vectorizer"].transform([expand_query(query)])
+    scores = cosine_similarity(vec, index["matrix"])[0]
+    top = np.argsort(scores)[::-1][:top_k]
+    return [index["chunks"][i]["id"] for i in top]</pre>
+</div>
+
+<div class="card">
+<h3>src/rationale.py — Person B writes</h3>
+<p>Calls the Anthropic API to generate a one-sentence explanation of why a retrieved IS standard is relevant to the query. Only used by the Flask UI — not by inference.py.</p>
+<pre>import os, anthropic
+from dotenv import load_dotenv
+load_dotenv()
+
+def get_rationale(query: str, standard_id: str) -> str:
+    try:
+        client = anthropic.Anthropic(
+            api_key=os.getenv("ANTHROPIC_API_KEY")
+        )
+        msg = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=120,
+            messages=[{"role": "user", "content":
+                f"User searched: '{query}'\n"
+                f"Retrieved standard: {standard_id}\n"
+                f"In one sentence explain why this IS standard is relevant."
+            }]
+        )
+        return msg.content[0].text
+    except Exception as e:
+        return f"(Explanation unavailable)"</pre>
+<div class="red">Never hardcode the API key in this file or anywhere in the codebase. os.getenv reads it from .env which is never pushed to GitHub.</div>
+</div>
+
+<div class="card">
+<h3>src/app.py — Person B writes</h3>
+<p>Flask web application. Loads the retriever index, accepts a query from the browser, calls retrieve() and get_rationale(), and returns results as JSON to be displayed.</p>
+<pre>import sys, os, time
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from flask import Flask, request, jsonify, render_template_string
+from src.retriever import load_index, retrieve
+from src.rationale import get_rationale
+
+app = Flask(__name__)
+INDEX = load_index("data/tfidf_model.pkl")
+
+PAGE = """&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;BIS Search&lt;/title&gt;
+&lt;style&gt;body{font-family:sans-serif;max-width:680px;margin:40px auto;padding:0 16px;}
+input{width:100%;padding:10px;font-size:15px;border:1px solid #ccc;border-radius:6px;}
+button{margin-top:8px;padding:9px 20px;background:#185FA5;color:#fff;border:none;
+  border-radius:6px;cursor:pointer;}
+.r{border:1px solid #ddd;border-radius:8px;padding:12px;margin:8px 0;}
+.rk{font-weight:600;color:#185FA5;}&lt;/style&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h2&gt;BIS Standards Search&lt;/h2&gt;
+&lt;input id="q" placeholder="Describe your product..."&gt;
+&lt;button onclick="go()"&gt;Search&lt;/button&gt;
+&lt;div id="out"&gt;&lt;/div&gt;
+&lt;script&gt;
+async function go(){
+  const q=document.getElementById('q').value;
+  document.getElementById('out').innerHTML='Searching...';
+  const r=await fetch('/search',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({query:q})});
+  const d=await r.json();
+  document.getElementById('out').innerHTML=d.results.map((x,i)=>
+    `&lt;div class="r"&gt;&lt;span class="rk"&gt;#${i+1}&lt;/span&gt; ${x.id}
+    &lt;p&gt;${x.rationale}&lt;/p&gt;&lt;/div&gt;`
+  ).join('')+'&lt;p style="color:#888"&gt;Latency: '+d.latency+'s&lt;/p&gt;';
+}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"""
+
+@app.route("/")
+def home(): return render_template_string(PAGE)
+
+@app.route("/search", methods=["POST"])
+def search():
+    q = request.json.get("query","")
+    t = time.time()
+    ids = retrieve(q, INDEX, top_k=5)
+    lat = round(time.time()-t, 3)
+    results=[{"id":i,"rationale":get_rationale(q,i)} for i in ids]
+    return jsonify({"results":results,"latency":lat})
+
+if __name__=="__main__":
+    app.run(debug=True, port=5000)</pre>
+</div>
+
+<div class="card">
+<h3>README.md — Person B writes — all sections required</h3>
+<pre># BIS Standards Retrieval System
+
+## What it does
+Retrieves the top-5 relevant BIS IS standards for a product description
+using TF-IDF search over BIS SP 21 (929 pages, 600+ IS standards).
+
+## Setup
+git clone https://github.com/YOUR_USERNAME/bis-standards-rag
+cd bis-standards-rag
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+## Build the index (run once)
+pdftotext BIS_SP_21.pdf BIS_SP_21.txt
+python src/ingest.py
+python src/indexer.py
+
+## Run inference (judges use this)
+python inference.py --input data/public_test_set.json \
+                    --output data/public_results.json
+
+## Run evaluation
+python eval_script.py --results data/public_results.json
+
+## Run the web UI
+cp .env.example .env          # add your API key to .env
+python src/app.py              # open http://localhost:5000
+
+## External APIs
+This project uses the Anthropic Claude API (claude-sonnet-4-20250514)
+for generating rationale explanations in the UI only.
+The core inference.py and eval pipeline require no external APIs.
+
+## Hardware requirements
+No GPU required. Runs on any standard CPU machine.
+Tested on Ubuntu 22.04 / macOS 13 / Windows 11, Python 3.10.
+
+## Dataset
+BIS SP 21 — Bureau of Indian Standards Handbook</pre>
+</div>
+
+<div class="card">
+<h3>data/chunks.json — Person A produces</h3>
+<pre>[
+  {
+    "id":    "IS 455: 1989",
+    "title": "PORTLAND SLAG CEMENT",
+    "text":  "IS 455: 1989 PORTLAND SLAG CEMENT Specification for portland slag cement comprising a uniform intimate mixture of granulated slag and portland cement clinker..."
+  },
+  {
+    "id":    "IS 269: 1989",
+    "title": "ORDINARY PORTLAND CEMENT",
+    "text":  "IS 269: 1989 ORDINARY PORTLAND CEMENT Specification for ordinary portland cement 33 grade covering chemical and physical requirements..."
+  }
+]</pre>
+<p>Target: 500–700+ entries. Every entry must have all three keys: id, title, text.</p>
+</div>
+
+<div class="card">
+<h3>data/public_results.json — Person A produces</h3>
+<pre>[
+  {
+    "id":                  "q1",
+    "retrieved_standards": [
+      "IS 455: 1989",
+      "IS 1489: 1991",
+      "IS 269: 1989",
+      "IS 8112: 1989",
+      "IS 12269: 1987"
+    ],
+    "latency_seconds": 0.021
+  }
+]</pre>
+<div class="red">Always exactly 5 items per query. Key names spelled exactly as shown. latency_seconds must be a float, not a string.</div>
+</div>
+</div>
+
+<!-- PERSON A AI RULES -->
+<div id="pg-airulesA" class="pg">
+<h2>Person A — AI coding rules and git safety rules</h2>
+<p style="margin-bottom:1rem;">Since you are building with AI assistance, these rules stop the AI from silently breaking things while generating code.</p>
+
+<div class="card">
+<h3>Rules about what the AI must NOT do when writing Person A's code</h3>
+<div class="red"><strong>Rule A-AI-1.</strong> The AI must never place inference.py inside /src. If it does, immediately move it to root. The judges run: <code>python inference.py</code> from the repo root — not <code>python src/inference.py</code>.</div>
+<div class="red"><strong>Rule A-AI-2.</strong> The AI must never change the output JSON key names. The only acceptable keys are id, retrieved_standards, and latency_seconds. If the AI writes "standards", "results", "retrieved", or anything else, fix it immediately.</div>
+<div class="red"><strong>Rule A-AI-3.</strong> The AI must never load the TF-IDF model inside the for-loop in inference.py. Loading it once before the loop is the only correct approach. Loading inside the loop causes every query to take 5+ seconds — latency failure.</div>
+<div class="red"><strong>Rule A-AI-4.</strong> The AI must never return a retrieved_standards list with fewer than or more than 5 items. Always include the padding logic: while len(ids) &lt; 5: ids.append(ids[-1]).</div>
+<div class="red"><strong>Rule A-AI-5.</strong> The AI must never generate IS standard IDs that don't come from the actual chunks.json. If the AI hallucinates an IS number (e.g. "IS 99999: 2024"), it will cause a hallucination penalty of -10 pts per occurrence.</div>
+<div class="red"><strong>Rule A-AI-6.</strong> The AI must never use libraries not in requirements.txt (e.g. sentence-transformers, torch, chromadb, faiss). These are unavailable. Only use: scikit-learn, numpy, pickle (stdlib), json (stdlib).</div>
+<div class="amb"><strong>Rule A-AI-7.</strong> If the AI rewrites retriever.py and removes the SYNONYMS dictionary, add it back. Query expansion is the innovation point and boosts Hit Rate significantly.</div>
+<div class="amb"><strong>Rule A-AI-8.</strong> If the AI changes the TfidfVectorizer parameters (ngram_range, sublinear_tf), test the eval score again before committing. Parameter changes can drop Hit Rate below 80%.</div>
+</div>
+
+<div class="card">
+<h3>Git rules for Person A specifically</h3>
+<div class="red"><strong>Git-A-1.</strong> Always commit data/tfidf_model.pkl. Do NOT add it to .gitignore. Without it, nobody can run inference.py. The file is large (10–50 MB) but must be in the repo.</div>
+<div class="red"><strong>Git-A-2.</strong> Always commit data/chunks.json after ingest.py runs successfully. This file is required for everything downstream.</div>
+<div class="red"><strong>Git-A-3.</strong> Never commit BIS_SP_21.txt or BIS_SP_21.pdf. These are inputs only. Add them to .gitignore.</div>
+<div class="amb"><strong>Git-A-4.</strong> When running inference.py to test locally, the output file is data/public_results.json. Always commit this after a successful eval run — it goes in the /data folder per rulebook Section 5.1.</div>
+<div class="grn"><strong>Git-A-5.</strong> Safe commit workflow for Person A:<br>
+<pre>git status                           # check what changed
+git add src/ingest.py src/indexer.py src/retriever.py inference.py
+git add data/chunks.json data/tfidf_model.pkl data/public_results.json
+git diff --cached                    # review before committing
+git commit -m "Add pipeline: ingest, index, retriever, inference"
+git pull origin main                 # get Person B's changes
+git push origin main</pre>
+</div>
+</div>
+
+<div class="card">
+<h3>What Person A must verify before every push</h3>
+<div class="step"><div class="sn">1</div><div class="sc">Run: python src/ingest.py → confirm "Extracted 500+ chunks" in terminal output</div></div>
+<div class="step"><div class="sn">2</div><div class="sc">Run: python src/indexer.py → confirm "Index built: 5XX docs" in output</div></div>
+<div class="step"><div class="sn">3</div><div class="sc">Run: python inference.py --input data/public_test_set.json --output data/public_results.json</div></div>
+<div class="step"><div class="sn">4</div><div class="sc">Run: python eval_script.py --results data/public_results.json → confirm Hit Rate ≥ 0.80 and MRR ≥ 0.74</div></div>
+<div class="step"><div class="sn">5</div><div class="sc">Check output file manually: open data/public_results.json, confirm exactly 5 items in retrieved_standards per query, key names correct</div></div>
+<div class="step"><div class="sn">6</div><div class="sc">Only then: git add → git commit → git pull → git push</div></div>
+</div>
+</div>
+
+<!-- PERSON B AI RULES -->
+<div id="pg-airulesB" class="pg">
+<h2>Person B — AI coding rules and git safety rules</h2>
+
+<div class="card">
+<h3>Rules about what the AI must NOT do when writing Person B's code</h3>
+<div class="red"><strong>Rule B-AI-1.</strong> The AI must never write the Anthropic API key directly into any Python file. The only correct pattern is: os.getenv("ANTHROPIC_API_KEY"). If the AI pastes a real key into code, that commit will expose it publicly when pushed.</div>
+<div class="red"><strong>Rule B-AI-2.</strong> The AI must never import rationale.py inside inference.py. Rationale is for the UI only. inference.py must run without any API calls — it only uses retriever.py. Mixing them makes inference slow and API-dependent.</div>
+<div class="red"><strong>Rule B-AI-3.</strong> The AI must never create a separate CSS file or JS file for the Flask UI. Keep everything in a single inline HTML string inside app.py. Separate static files are harder to run and risk missing from the repo.</div>
+<div class="amb"><strong>Rule B-AI-4.</strong> If the AI generates slide content for presentation.pdf out of order (e.g. puts Demo before Architecture), fix the order. The exact required order is: Problem → Solution → Architecture → Chunking → Demo → Evaluation → Impact → Team. Wrong order = subjective score loss.</div>
+<div class="amb"><strong>Rule B-AI-5.</strong> The AI must not add placeholder text like "[YOUR METRIC HERE]" to slide 6. Slide 6 must show real numbers copied from the eval_script.py terminal output. Get the numbers from Person A first.</div>
+<div class="red"><strong>Rule B-AI-6.</strong> The AI must never generate or rewrite eval_script.py. That file is provided by organizers. If the AI tries to create it, reject the output and use only the original file.</div>
+<div class="amb"><strong>Rule B-AI-7.</strong> If the AI adds a new Python import to app.py or rationale.py, check requirements.txt immediately. Every new package must be added with an exact pinned version. Run: pip show PACKAGENAME to get the version.</div>
+<div class="grn"><strong>Rule B-AI-8.</strong> When the AI writes app.py, make sure it loads the TF-IDF index at app startup (outside the route function), not inside the /search route. Loading inside the route makes every request slow.</div>
+</div>
+
+<div class="card">
+<h3>Git rules for Person B specifically</h3>
+<div class="red"><strong>Git-B-1.</strong> Create .gitignore FIRST — before any code is written or pushed. This is the single most important git action. Without it, .env or __pycache__ may accidentally be committed before you notice.</div>
+<div class="red"><strong>Git-B-2.</strong> Never run "git add ." (dot adds everything). Always add files by name. "git add ." risks staging .env, large temp files, or the PDF.</div>
+<div class="red"><strong>Git-B-3.</strong> After the repo is created on GitHub, immediately set it to Public. Do this before the first push. Verify: open the repo URL in an incognito browser window — if you can see the files, it's public.</div>
+<div class="amb"><strong>Git-B-4.</strong> When committing presentation.pdf, verify the file is the PDF version, not the source file (Canva/PowerPoint). Only the .pdf goes into the repo.</div>
+<div class="amb"><strong>Git-B-5.</strong> The demo video must NOT be committed to the repo. Video files are too large for git. Upload to YouTube (unlisted) or Google Drive and paste the link in README.md.</div>
+<div class="grn"><strong>Git-B-6.</strong> Safe commit workflow for Person B:<br>
+<pre>git status                           # check what changed
+git add README.md requirements.txt .gitignore .env.example
+git add src/app.py src/rationale.py
+git add presentation.pdf
+git diff --cached                    # review before committing
+git commit -m "Add UI, rationale, README, presentation"
+git pull origin main                 # get Person A's pipeline code
+git push origin main</pre>
+</div>
+</div>
+
+<div class="card">
+<h3>What Person B must verify before final submission push</h3>
+<div class="step"><div class="sn">1</div><div class="sc">Open repo URL in incognito window → confirm it loads without login (proves it's public)</div></div>
+<div class="step"><div class="sn">2</div><div class="sc">Check .env is not in the repo: go to GitHub → search for ".env" in the file list → it must not appear</div></div>
+<div class="step"><div class="sn">3</div><div class="sc">Check presentation.pdf opens and has exactly 8 slides in the correct order</div></div>
+<div class="step"><div class="sn">4</div><div class="sc">Check README has the demo video link, not just a placeholder</div></div>
+<div class="step"><div class="sn">5</div><div class="sc">Run: python src/app.py → open http://localhost:5000 → type a query → verify results appear</div></div>
+<div class="step"><div class="sn">6</div><div class="sc">Confirm requirements.txt has every imported package with a pinned version</div></div>
+</div>
+</div>
+
+<!-- SAFE GIT WORKFLOW -->
+<div id="pg-gitflow" class="pg">
+<h2>Safe git workflow — complete step-by-step for both persons</h2>
+
+<div class="card">
+<h3>Day 0 — Person B does this before anyone writes a single line of code</h3>
+<pre># Step 1 — create the folder locally
+mkdir bis-standards-rag && cd bis-standards-rag
+
+# Step 2 — create .gitignore FIRST (before init)
+cat > .gitignore << 'EOF'
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.DS_Store
+*.log
+BIS_SP_21.txt
+BIS_SP_21.pdf
+EOF
+
+# Step 3 — create folder structure
+mkdir src data
+touch inference.py eval_script.py requirements.txt README.md
+touch src/ingest.py src/indexer.py src/retriever.py
+touch src/rationale.py src/app.py
+echo "" > data/.gitkeep
+
+# Step 4 — init git and make first commit
+git init
+git add .gitignore        # .gitignore goes in FIRST
+git commit -m "Add gitignore"
+git add .
+git commit -m "Initial folder structure"
+
+# Step 5 — create repo on github.com (set to PUBLIC)
+# Then connect and push:
+git remote add origin https://github.com/USERNAME/bis-standards-rag.git
+git branch -M main
+git push -u origin main</pre>
+<div class="grn">After this: Person A and Person B both clone the repo and work from their own clones. Never share files via USB or email — always use git.</div>
+</div>
+
+<div class="card">
+<h3>How Person A and B work in parallel without destroying each other's code</h3>
+<div class="step"><div class="sn">1</div><div class="sc">Person A owns: inference.py, src/ingest.py, src/indexer.py, src/retriever.py, data/chunks.json, data/tfidf_model.pkl, data/public_results.json</div></div>
+<div class="step"><div class="sn">2</div><div class="sc">Person B owns: src/app.py, src/rationale.py, README.md, requirements.txt, presentation.pdf, .gitignore, .env.example</div></div>
+<div class="step"><div class="sn">3</div><div class="sc">Never edit the other person's files. If a change is needed in someone else's file, communicate first and let the owner make the edit.</div></div>
+<div class="step"><div class="sn">4</div><div class="sc">Before every push, always run: git pull origin main — this fetches the other person's latest changes before adding yours. This prevents overwriting their work.</div></div>
+<div class="step"><div class="sn">5</div><div class="sc">If there is a merge conflict (git says "CONFLICT"), open the file, find the conflict markers (&lt;&lt;&lt;&lt;&lt; HEAD and &gt;&gt;&gt;&gt;&gt;), keep the correct code, delete the markers, then git add and git commit.</div></div>
+</div>
+
+<div class="card">
+<h3>What to do if a bad push happens (recovery steps)</h3>
+<div class="amb"><strong>Scenario 1 — AI-generated code broke inference.py output format.</strong><br>
+Run: git log --oneline (find the last good commit hash)<br>
+Run: git revert HEAD (creates a new commit undoing the last one)<br>
+Fix the code, test it, commit again.</div>
+<div class="amb"><strong>Scenario 2 — .env was accidentally committed.</strong><br>
+This is serious. Do these immediately:<br>
+1. Rotate the API key (go to Anthropic console and revoke it, generate a new one)<br>
+2. Run: git rm --cached .env && git commit -m "Remove .env from tracking"<br>
+3. Add .env to .gitignore if it wasn't there<br>
+4. The key in git history is still visible — rotating the key makes it useless.</div>
+<div class="amb"><strong>Scenario 3 — tfidf_model.pkl is missing from the repo.</strong><br>
+Run: ls data/ to confirm. If missing, Person A runs python src/indexer.py again locally, then git add data/tfidf_model.pkl && git commit && git push.</div>
+<div class="amb"><strong>Scenario 4 — eval_script.py was overwritten by AI.</strong><br>
+Get the original file from the organizers again. Copy it byte-for-byte. git add eval_script.py && git commit -m "Restore original eval_script"</div>
+</div>
+
+<div class="card">
+<h3>How to check the repo is correct without cloning it yourself</h3>
+<pre># Check all expected files exist on GitHub (run this from your local clone):
+git ls-files | sort
+
+# Expected output must include ALL of:
+# .env.example
+# .gitignore
+# README.md
+# data/chunks.json
+# data/public_results.json
+# data/public_test_set.json
+# data/tfidf_model.pkl
+# eval_script.py
+# inference.py
+# presentation.pdf
+# requirements.txt
+# src/app.py
+# src/indexer.py
+# src/ingest.py
+# src/rationale.py
+# src/retriever.py</pre>
+<div class="grn">If any file is missing from this list, it has not been pushed. Add and commit it now.</div>
+</div>
+</div>
+
+<!-- FINAL VERIFICATION -->
+<div id="pg-verify" class="pg">
+<h2>Final verification — run these before submitting</h2>
+
+<div class="card">
+<h3>The exact 6 commands to run in order — both persons together</h3>
+<pre># Command 1 — fresh install test (simulates what judges do)
+python -m venv .venv_test
+source .venv_test/bin/activate
+pip install -r requirements.txt
+
+# Command 2 — build the index from scratch
+python src/ingest.py
+python src/indexer.py
+
+# Command 3 — run inference
+python inference.py \
+  --input data/public_test_set.json \
+  --output data/public_results.json
+
+# Command 4 — evaluate
+python eval_script.py --results data/public_results.json
+
+# Command 5 — verify output file structure
+python -c "
+import json
+data = json.load(open('data/public_results.json'))
+for item in data:
+    assert 'id' in item
+    assert 'retrieved_standards' in item
+    assert 'latency_seconds' in item
+    assert len(item['retrieved_standards']) == 5
+    assert isinstance(item['latency_seconds'], float)
+print(f'PASS: {len(data)} items, all keys correct, all lists have 5 items')
+"
+
+# Command 6 — list all tracked files
+git ls-files | sort</pre>
+</div>
+
+<div class="card">
+<h3>Score targets to confirm before pushing</h3>
+<div class="grid3">
+<div class="mcard"><div class="num" style="color:#3B6D11;">≥ 0.80</div><div class="mlabel">Hit Rate @3</div></div>
+<div class="mcard"><div class="num" style="color:#185FA5;">≥ 0.74</div><div class="mlabel">MRR @5</div></div>
+<div class="mcard"><div class="num" style="color:#854F0B;">&lt; 5s</div><div class="mlabel">Avg latency</div></div>
+</div>
+<div class="grid2" style="margin-top:10px;">
+<div class="mcard"><div class="num" style="color:#A32D2D;">0</div><div class="mlabel">Hallucinated IS IDs</div></div>
+<div class="mcard"><div class="num" style="color:#3B6D11;">8</div><div class="mlabel">Slides (exact count)</div></div>
+</div>
+</div>
+
+<div class="card">
+<h3>Complete submission checklist</h3>
+<table>
+<tr><th>Item</th><th>Owner</th><th>Consequence if missed</th></tr>
+<tr><td>inference.py at root</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">Disqualification</span></td></tr>
+<tr><td>eval_script.py at root (original)</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">0/40 automated</span></td></tr>
+<tr><td>Output keys: id, retrieved_standards, latency_seconds</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">Eval crash = 0/40</span></td></tr>
+<tr><td>Exactly 5 items in retrieved_standards</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">Lower Hit Rate + MRR</span></td></tr>
+<tr><td>data/tfidf_model.pkl committed</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">Nothing runs</span></td></tr>
+<tr><td>data/chunks.json committed</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-red">Nothing runs</span></td></tr>
+<tr><td>data/public_results.json committed</td><td><span class="pill p-grn">A</span></td><td><span class="pill p-amb">Subjective loss</span></td></tr>
+<tr><td>Repo is public</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-red">Disqualification</span></td></tr>
+<tr><td>.env is NOT in the repo</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-red">Security incident</span></td></tr>
+<tr><td>requirements.txt with pinned versions</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-red">Judges can't run it</span></td></tr>
+<tr><td>presentation.pdf — 8 slides, correct order</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-amb">Presentation score loss</span></td></tr>
+<tr><td>README with all disclosures</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-amb">Transparency violation</span></td></tr>
+<tr><td>Demo video ≤ 7 min — link in README</td><td><span class="pill p-amb">B</span></td><td><span class="pill p-amb">Presentation score loss</span></td></tr>
+<tr><td>Submitted before 3 May 11:59 PM IST</td><td>Both</td><td><span class="pill p-red">Disqualification</span></td></tr>
+</table>
+</div>
+</div>
+
+</div>
+<script>
+function go(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>

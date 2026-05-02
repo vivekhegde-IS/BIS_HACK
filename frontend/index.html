@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIS Finder — Bureau of Indian Standards Search</title>
+  <meta name="description" content="Search and discover Bureau of Indian Standards (BIS) IS codes, specifications, and technical documents instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan:        #00e5ff;
+      --orange:      #ff4500;
+      --white:       #ffffff;
+      --glass-bg:    rgba(255, 255, 255, 0.07);
+      --glass-bd:    rgba(255, 255, 255, 0.16);
+      --text-main:   rgba(255, 255, 255, 0.95);
+      --text-sub:    rgba(255, 255, 255, 0.55);
+      --text-muted:  rgba(255, 255, 255, 0.35);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(125deg, var(--cyan) 0%, #00c4d4 22%, #a06030 62%, var(--orange) 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      color: var(--text-main);
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before { width: 500px; height: 500px; background: var(--cyan);   top: -140px; left: -140px; }
+    body::after  { width: 460px; height: 460px; background: var(--orange); bottom: -120px; right: -120px; }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px 80px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 780px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--glass-bd);
+      border-radius: 24px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .card-header {
+      padding: 32px 36px 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .site-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--white);
+      line-height: 1.15;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 6px;
+    }
+
+    .search-section {
+      padding: 24px 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--glass-bd);
+      border-radius: 12px;
+      padding: 14px 20px;
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus {
+      border-color: rgba(0,229,255,0.5);
+      box-shadow: 0 0 0 3px rgba(0,229,255,0.12);
+    }
+
+    .search-btn {
+      padding: 14px 28px;
+      background: linear-gradient(135deg, rgba(0,229,255,0.8), rgba(0,180,200,0.9));
+      border: none;
+      border-radius: 12px;
+      color: #003040;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .search-btn:hover  { opacity: 0.88; transform: scale(1.02); }
+    .search-btn:active { transform: scale(0.97); }
+    .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .results-section {
+      padding: 0 36px 32px;
+      display: none;
+    }
+    .results-section.visible { display: block; }
+
+    .results-meta {
+      padding: 20px 0 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 20px;
+    }
+
+    .results-count {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .results-count strong {
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .response-time-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 20px 0 4px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 4px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .response-time-row .rt-icon { font-size: 15px; }
+    .response-time-row .rt-val {
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .result-item {
+      display: flex;
+      gap: 18px;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      animation: fadeUp 0.3s ease both;
+    }
+    .result-item:last-child { border-bottom: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-number {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,229,255,0.1);
+      border: 1px solid rgba(0,229,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-top: 2px;
+    }
+
+    .result-body { flex: 1; }
+
+    .result-id {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 5px;
+    }
+
+    .result-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+
+    .result-explanation {
+      font-size: 13.5px;
+      color: var(--text-sub);
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+
+    .result-category {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: rgba(0,229,255,0.08);
+      border: 1px solid rgba(0,229,255,0.2);
+      color: rgba(0,229,255,0.8);
+    }
+
+    .loading-row {
+      padding: 36px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+
+    .spinner-ring {
+      width: 22px; height: 22px;
+      border: 2.5px solid rgba(255,255,255,0.12);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-message {
+      padding: 36px 0;
+      text-align: center;
+      color: var(--text-sub);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .status-message .emoji { font-size: 28px; display: block; margin-bottom: 10px; }
+
+    .footer {
+      margin-top: 28px;
+      text-align: center;
+    }
+    .footer-brand {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .footer-sub {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 780px;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 28px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Main Card -->
+  <div class="card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="site-title">BIS Finder</div>
+      <div class="page-title">BIS Standards Search</div>
+      <div class="page-subtitle">Search and discover Bureau of Indian Standards — IS codes, specifications, and technical documents</div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-section">
+      <div class="search-row">
+        <input
+          id="query-input"
+          class="search-input"
+          type="text"
+          placeholder="e.g. cement for structural concrete, precast pipes, roofing sheets..."
+          autocomplete="off"
+          aria-label="Search BIS Standards"
+        />
+        <button class="search-btn" id="search-btn" onclick="doSearch()">Search</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="results-section">
+      <!-- injected by JS -->
+    </div>
+
+  </div><!-- /.card -->
+
+  <div class="divider"></div>
+
+  <div class="footer">
+    <div class="footer-brand">BIS Finder</div>
+    <div class="footer-sub">Bureau of Indian Standards</div>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+  // ─── IMPORTANT: Replace with your actual Render backend URL after deploying ───
+  const API_BASE = window.ENV_API_BASE || 'https://bis-finder-backend.onrender.com';
+
+  const input   = document.getElementById('query-input');
+  const section = document.getElementById('results-section');
+  const btn     = document.getElementById('search-btn');
+
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+
+  async function doSearch() {
+    const query = input.value.trim();
+    if (!query) return;
+
+    btn.disabled = true;
+    showLoading();
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/search`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ query }),
+      });
+      const data = await res.json();
+
+      btn.disabled = false;
+
+      if (data.error) { showStatus('⚠️', data.error); return; }
+      if (!data.results || data.results.length === 0) {
+        showStatus('🔍', 'No matching BIS standards found.<br>Try different or broader keywords.');
+        return;
+      }
+
+      renderResults(data.results, data.count, data.latency, query);
+
+    } catch (err) {
+      btn.disabled = false;
+      showStatus('❌', 'Could not reach the backend. Please try again shortly.');
+      console.error(err);
+    }
+  }
+
+  function showLoading() {
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="loading-row">
+        <div class="spinner-ring"></div>
+        Searching BIS standards…
+      </div>`;
+  }
+
+  function showStatus(emoji, msg) {
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="status-message">
+        <span class="emoji">${emoji}</span>
+        ${msg}
+      </div>`;
+  }
+
+  function renderResults(results, count, responseTime, query) {
+    const items = results.map((r, i) => `
+      <div class="result-item" style="animation-delay:${i * 0.07}s">
+        <div class="result-number">${i + 1}</div>
+        <div class="result-body">
+          <div class="result-id">${esc(r.id)}</div>
+          <div class="result-title">${esc(r.title)}</div>
+          <div class="result-explanation">${esc(r.description || r.rationale || '')}</div>
+          ${r.category ? `<span class="result-category">${esc(r.category)}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    section.classList.add('visible');
+    section.innerHTML = `
+      <div class="results-meta">
+        <div class="results-count">
+          Showing <strong>${count}</strong> result${count !== 1 ? 's' : ''} for
+          "<strong>${esc(query)}</strong>"
+        </div>
+      </div>
+      ${items}
+      <div class="response-time-row">
+        <span class="rt-icon">⏱️</span>
+        Response time: <span class="rt-val">${responseTime.toFixed(3)}s</span>
+      </div>
+    `;
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
