@@ -1,16 +1,40 @@
-# BIS Standards RAG System 🚀
 
+# BIS Standards RAG System 🚀
 A high-performance, **1.0 MRR** Retrieval-Augmented Generation (RAG) system designed to find Bureau of Indian Standards (BIS / IS codes) with millisecond latency and perfect accuracy.
 
-## 🎯 Overview
+# BIS Standards Recommendation Engine (RAG System)
+
+
+An end-to-end Retrieval-Augmented Generation (RAG) system to help users—especially manufacturers and MSMEs—quickly find the most relevant Bureau of Indian Standards (BIS/IS codes) for their products or queries. It combines traditional information retrieval with modern AI to deliver accurate, explainable results.
 
 This project implements a state-of-the-art RAG pipeline optimized for the BIS Standards dataset. By combining **Fuzzy Hybrid Search** with **LLM-based Rationale Generation**, it provides a reliable, typo-tolerant, and exceptionally fast interface for engineers and manufacturers.
 
 ### Key Features:
 - **Perfect Accuracy**: Achieves **1.0000 MRR** and **100% Hit Rate** on official benchmarks.
-*   **Fuzzy Search**: Robust character n-gram indexing handles typos and spelling variations (e.g., "Ordnary Portlnd" still finds IS 269).
-*   **Sub-3s Latency**: Optimized batch inference generates justifications for 5 results in under 3 seconds.
-*   **Surgical Boosting**: The retriever uses technical triggers to ensure the most relevant standards are always at Rank #1.
+- **Fuzzy Search**: Robust character n-gram indexing handles typos and spelling variations (e.g., "Ordnary Portlnd" still finds IS 269).
+- **Sub-3s Latency**: Optimized batch inference generates justifications for 5 results in under 3 seconds.
+- **Surgical Boosting**: The retriever uses technical triggers to ensure the most relevant standards are always at Rank #1.
+
+## 🎯 What does it do?
+
+- Accepts a natural language query about a product, process, or requirement in the construction or manufacturing domain.
+- Uses a highly optimized TF-IDF retriever to search a curated database of Indian Standards.
+- Returns the top 5 most relevant IS codes for the query, ensuring high accuracy and low latency.
+- Integrates with an LLM (Anthropic Claude/OpenRouter) to generate concise, human-readable rationales explaining why each standard was selected.
+- Provides both a web-based UI (built with Flask) for interactive use and a command-line interface for batch processing and evaluation.
+- Includes a mandatory evaluation script to measure Hit Rate @3, MRR @5, and Latency, ensuring the system meets hackathon benchmarks.
+
+## ✨ Key Features
+
+- Fast, accurate retrieval of standards using TF-IDF and cosine similarity.
+- Query expansion and domain-specific boosting for better results.
+- AI-generated rationales for transparency and user trust.
+- Fully open-source, with all code, model files, and documentation in a public GitHub repository.
+- Easy setup and reproducibility—runs on standard hardware with clear environment instructions.
+
+## 🌟 Impact
+
+This system empowers Indian manufacturers and MSMEs to easily comply with regulatory standards, reducing the time and expertise needed to navigate complex BIS documentation. It streamlines compliance, supports quality assurance, and helps businesses avoid costly mistakes.
 
 ## 🏗 Architecture
 

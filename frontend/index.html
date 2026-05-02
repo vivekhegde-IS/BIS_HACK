@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIS Finder — Bureau of Indian Standards Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cyan:        #00e5ff;
+      --orange:      #ff4500;
+      --white:       #ffffff;
+      --glass-bg:    rgba(255, 255, 255, 0.07);
+      --glass-bd:    rgba(255, 255, 255, 0.16);
+      --text-main:   rgba(255, 255, 255, 0.95);
+      --text-sub:    rgba(255, 255, 255, 0.55);
+      --text-muted:  rgba(255, 255, 255, 0.35);
+    }
+
+    /* ── Background ───────────────────────────────────────────────────── */
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(125deg, var(--cyan) 0%, #00c4d4 22%, #a06030 62%, var(--orange) 100%);
+      background-attachment: fixed;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      color: var(--text-main);
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before { width: 500px; height: 500px; background: var(--cyan);   top: -140px; left: -140px; }
+    body::after  { width: 460px; height: 460px; background: var(--orange); bottom: -120px; right: -120px; }
+
+    /* ── Page Shell ───────────────────────────────────────────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 24px 80px;
+    }
+
+    /* ── Main Card ────────────────────────────────────────────────────── */
+    .card {
+      width: 100%;
+      max-width: 780px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--glass-bd);
+      border-radius: 24px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────── */
+    .card-header {
+      padding: 32px 36px 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .site-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 6px;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--white);
+      line-height: 1.15;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
