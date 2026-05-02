@@ -3,12 +3,15 @@ services:
     name: bis-finder-backend
     env: python
     region: singapore
+    pythonVersion: "3.11.0"
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn "src.app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
-      - key: ANTHROPIC_API_KEY
-        sync: false          # Set this manually in Render dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
       - key: FLASK_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11.0"
