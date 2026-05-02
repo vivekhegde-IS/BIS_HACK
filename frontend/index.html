@@ -423,7 +423,7 @@
         <div class="result-body">
           <div class="result-id">${esc(r.id)}</div>
           <div class="result-title">${esc(r.title)}</div>
-          <div class="result-explanation">${esc(r.description || r.rationale || '')}</div>
+          <div class="result-explanation">${esc(r.rationale || r.description || '')}</div>
           ${r.category ? `<span class="result-category">${esc(r.category)}</span>` : ''}
         </div>
       </div>
