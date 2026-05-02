@@ -1,0 +1,9 @@
+// This file tells Vercel to serve static files from the frontend directory
+{
+  "version": 2,
+  "public": true,
+  "builds": [],
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
