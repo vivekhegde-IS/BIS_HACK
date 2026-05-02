@@ -50,15 +50,15 @@ Example: Rationale 1 ### Rationale 2 ### Rationale 3...
 """
 
     try:
-        # Using the fast Liquid AI model
+        # Using a much more capable free model (120B) for reliable instruction following
         response = client.chat.completions.create(
-            model="liquid/lfm-2.5-1.2b-instruct:free",
+            model="nvidia/nemotron-3-super-120b-a12b:free",
             messages=[
-                {"role": "system", "content": "You are a helpful BIS standards expert who provides rationales separated by ###."},
+                {"role": "system", "content": "You are a helpful BIS standards expert. You must provide EXACTLY the number of rationales requested, separated by exactly '###' and nothing else."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
-            temperature=0.0
+            max_tokens=800,
+            temperature=0.1
         )
         full_text = response.choices[0].message.content
         # Split by delimiter and return list
@@ -95,7 +95,7 @@ Do not include indices or descriptions.
 
     try:
         response = client.chat.completions.create(
-            model="liquid/lfm-2.5-1.2b-instruct:free",
+            model="nvidia/nemotron-3-super-120b-a12b:free",
             messages=[
                 {"role": "system", "content": "You are a BIS ranking expert. Output ONLY standard IDs, one per line."},
                 {"role": "user", "content": prompt}
