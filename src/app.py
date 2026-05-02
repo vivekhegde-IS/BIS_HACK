@@ -147,8 +147,24 @@ def real_search(query: str, top_k: int = 5):
         return results if results else None
     except Exception as e:
         print(f"[-] Search error: {str(e)}")
-        # Ultimate fallback
-        return demo_search(query, top_k=top_k)
+        # Ultimate fallback with AI rationales!
+        selected_chunks = demo_search(query, top_k=top_k)
+        for c in selected_chunks:
+            if 'standard' not in c:
+                c['standard'] = c['id']
+                
+        rationales = generate_rationale(selected_chunks, query)
+        
+        results = []
+        for i, chunk in enumerate(selected_chunks):
+            rat_text = rationales[i] if i < len(rationales) else f"Standard retrieved for: {query}"
+            results.append({
+                "id":          chunk.get("standard", chunk.get("id")),
+                "title":       chunk.get("title", chunk.get("standard")),
+                "description": chunk.get("description", ""),
+                "rationale":   rat_text,
+            })
+        return results
 
 
 # ─── Application factory ──────────────────────────────────────────────────────
