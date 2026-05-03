@@ -44,25 +44,64 @@ A user asked: "{query}"
 Here are the top retrieved standards:
 {context}
 
-For EACH of the {len(standards)} standards above, provide a detailed summary (at least 3 lines) explaining why it is relevant.
-IMPORTANT: Separate each of the {len(standards)} rationales with a triple hashtag '###'.
-Example: Rationale 1 ### Rationale 2 ### Rationale 3...
+Provide a concise 1-2 sentence rationale for EACH of the {len(standards)} standards, explaining why it is specifically relevant to the user's query.
+
+Respond strictly in JSON format with a single key "rationales" containing a list of strings, in the exact same order as the standards.
+Example:
+{{
+  "rationales": [
+    "Rationale for the first standard...",
+    "Rationale for the second standard...",
+    ...
+  ]
+}}
 """
 
     try:
-        # Using a much more capable free model (120B) for reliable instruction following
-        response = client.chat.completions.create(
-            model="nvidia/nemotron-3-super-120b-a12b:free",
-            messages=[
-                {"role": "system", "content": "You are a helpful BIS standards expert. You must provide EXACTLY the number of rationales requested, separated by exactly '###' and nothing else."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=800,
-            temperature=0.1
-        )
-        full_text = response.choices[0].message.content
-        # Split by delimiter and return list
-        rationales = [r.strip() for r in full_text.split('###')]
+        import json
+        import re
+        
+        models_to_try = [
+            "google/gemma-2-9b-it:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "qwen/qwen-2.5-72b-instruct:free",
+            "nvidia/nemotron-3-super-120b-a12b:free"
+        ]
+        
+        rationales = []
+        for model_id in models_to_try:
+            try:
+                response = client.chat.completions.create(
+                    model=model_id,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful BIS standards expert. Respond ONLY in valid JSON format."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=600,
+                    temperature=0.1,
+                    timeout=12.0
+                )
+                content = response.choices[0].message.content
+                
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    content = json_match.group(0)
+                    
+                data = json.loads(content)
+                rationales = data.get("rationales", [])
+                
+                if len(rationales) > 0:
+                    break # Success!
+            except Exception as loop_e:
+                print(f"[*] Model {model_id} failed: {str(loop_e)}")
+                continue
+                
+        # Ensure we return exactly len(standards) items
+        if len(rationales) < len(standards):
+            rationales += [f"Relevant to: {query}"] * (len(standards) - len(rationales))
+        elif len(rationales) > len(standards):
+            rationales = rationales[:len(standards)]
+            
         return rationales
     except Exception as e:
         print(f"[-] OpenRouter Error: {str(e)}")
@@ -94,16 +133,32 @@ Do not include indices or descriptions.
 """
 
     try:
-        response = client.chat.completions.create(
-            model="nvidia/nemotron-3-super-120b-a12b:free",
-            messages=[
-                {"role": "system", "content": "You are a BIS ranking expert. Output ONLY standard IDs, one per line."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=200,
-            temperature=0.0
-        )
-        llm_lines = [line.strip() for line in response.choices[0].message.content.split('\n') if line.strip()]
+        models_to_try = [
+            "google/gemma-2-9b-it:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "qwen/qwen-2.5-72b-instruct:free",
+            "nvidia/nemotron-3-super-120b-a12b:free"
+        ]
+        
+        llm_lines = []
+        for model_id in models_to_try:
+            try:
+                response = client.chat.completions.create(
+                    model=model_id,
+                    messages=[
+                        {"role": "system", "content": "You are a BIS ranking expert. Output ONLY standard IDs, one per line."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=200,
+                    temperature=0.0,
+                    timeout=10.0
+                )
+                llm_lines = [line.strip() for line in response.choices[0].message.content.split('\n') if line.strip()]
+                if len(llm_lines) > 0:
+                    break
+            except Exception as loop_e:
+                print(f"[*] Rerank model {model_id} failed: {str(loop_e)}")
+                continue
         
         # Fuzzy match LLM output back to original IDs
         valid_map = {re.sub(r'[\s\(\)]', '', cid).lower(): cid for cid in [c.get('standard') for c in candidates]}
